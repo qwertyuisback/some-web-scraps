@@ -1,0 +1,49 @@
+# %pip install beautifulsoup4
+# %pip install requests
+# %pip install selenium
+# Import necessary libraries
+from selenium import webdriver
+from bs4 import BeautifulSoup
+
+# Set up the WebDriver (e.g., Chrome)
+driver = webdriver.Chrome()  # Requires ChromeDriver
+driver.get("https://www.youtube.com/playlist?list=PLh5DDeppeM8u9jv5_bU89zRzxP_lY5dUm") #Write the playlist link here
+page_source = driver.page_source
+
+# Parse the page source with BeautifulSoup
+soup = BeautifulSoup(page_source, 'html.parser')
+
+# Find all elements with the specified class
+elements = soup.find_all(class_='badge-shape-wiz__text')
+
+time_strings=[] #A list to collect times extracted via Selenium
+# Extract and print the text from each element
+for element in elements:
+    print(element.text)
+    time_strings.append(element.text)
+
+driver.quit()
+
+print("time_strings:",time_strings)
+
+from datetime import timedelta
+
+# Function to convert time strings to timedelta
+def parse_time_string(time_str):
+    parts = time_str.split(":")
+    if len(parts) == 2:  # Format: MM:SS
+        minutes, seconds = map(int, parts)
+        return timedelta(minutes=minutes, seconds=seconds)
+    elif len(parts) == 3:  # Format: HH:MM:SS
+        hours, minutes, seconds = map(int, parts)
+        return timedelta(hours=hours, minutes=minutes, seconds=seconds)
+    else:
+        raise ValueError(f"Invalid time format: {time_str}")
+
+# Calculate the total time
+total_time = sum((parse_time_string(t) for t in time_strings), timedelta())
+
+# Print the total time in HH:MM:SS format
+total_hours, remainder = divmod(total_time.total_seconds(), 3600)
+total_minutes, total_seconds = divmod(remainder, 60)
+print(f"Total Time: {int(total_hours):02}:{int(total_minutes):02}:{int(total_seconds):02}")
