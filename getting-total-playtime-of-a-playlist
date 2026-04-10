@@ -6,12 +6,13 @@ from selenium import webdriver
 
 # Set up the WebDriver (Chrome)
 driver = webdriver.Chrome()  # Requires ChromeDriver or Google Chrome installed
-driver.get("https://www.youtube.com/playlist?list=PLh5DDeppeM8u9jv5_bU89zRzxP_lY5dUm") #Write the playlist link here
+driver.get("https://www.youtube.com/playlist?list=PLT_IUIKYMzbtD0aAW-LD8Iwxy1tbEpHIh") #Write the playlist link here
 page_source = driver.page_source
 
 #Waiting for the page to load
 from selenium.webdriver.support.ui import WebDriverWait
 WebDriverWait(driver, timeout=10)
+
 
 #Scrolling the page until the end:
 from selenium.webdriver.common.by import By
@@ -19,8 +20,13 @@ from selenium.webdriver.common.keys import Keys
 import time
 body=driver.find_element(By.TAG_NAME ,"body")
 #find the number of videos in the playlist by its specified class
-noofvideos_element=driver.find_elements(By.CLASS_NAME,"yt-core-attributed-string.yt-content-metadata-view-model__metadata-text.yt-core-attributed-string--white-space-pre-wrap.yt-core-attributed-string--link-inherit-color")
+noofvideos_element=driver.find_elements(By.CLASS_NAME,"yt-core-attributed-string.ytContentMetadataViewModelMetadataText.yt-core-attributed-string--white-space-pre-wrap.yt-core-attributed-string--link-inherit-color")
+print("number of elements found:",len(noofvideos_element))
+# print("noofvideos_element:",noofvideos_element)
+for element in noofvideos_element:
+    print(f"Element text: {element.text}")
 noofvideos=noofvideos_element[1].text
+print("noofvideos:",noofvideos)
 #Remove the string from noofvideos and convert it to an integer
 noofvideos=int(noofvideos.split()[0])
 print("Number of videos in the playlist:",noofvideos)
@@ -32,26 +38,35 @@ for _ in range(noofvideos):
 print("Scrolling completed. Please don't forget to control the page after this process.")
 
 # Find all lengths by its specified class
-time_strings=[] #A list to collect lengths extracted via Selenium
+time_strings_og=[] #A list to collect lengths extracted via Selenium
 # Extract and print the text from each element
 elements = driver.find_elements(By.CLASS_NAME,"yt-badge-shape__text")#'badge-shape-wiz__text')
 print("number of elements found:",len(elements))
 print("elements:",elements)
 for element in elements:
-    time_strings.append(element.text)
+    time_strings_og.append(element.text)
     print(element.text) 
-
+timestringslist=time_strings_og
 driver.quit()
 
-if "CANLI" in time_strings :  #If the video is live, we can't calculate its length, so we will ignore it.
-    time_strings.remove("CANLI")
-if "LIVE" in time_strings :  #If the video is live, we can't calculate its length, so we will ignore it.
-    time_strings.remove("LIVE")
-if '' in time_strings:  #If there is an empty string in the list, we will ignore it.
-    time_strings.remove('')
 
-print("number of video lengths found:",len(time_strings))
-print("time_strings:",time_strings)
+
+print("number of video lengths found overall:",len(time_strings_og))
+time_strings = [t for t in time_strings_og if t]  # Remove empty strings from the list
+print("time_strings after deletion of empty strings:",len(time_strings))
+print("time_strings list after deletion of empty strings:",time_strings)
+
+calculate_from=125 #if we want to calculate the total playtime starting from a specific video, we can specify its index here. For example, if we want to calculate the total playtime starting from the second video, we can set this variable to 2. By default, it is set to 1, which means that we will calculate the total playtime of all videos in the playlist. 
+time_strings_sp = time_strings[calculate_from-1:]  # Keep only the time strings starting from the specified index
+print("time_strings from a specific index:",time_strings_sp)
+
+if "CANLI" in time_strings_sp :  #If the video is live, we can't calculate its length, so we will ignore it.
+    time_strings_sp.remove("CANLI")
+if "LIVE" in time_strings_sp :  #If the video is live, we can't calculate its length, so we will ignore it.
+    time_strings_sp.remove("LIVE")
+if '' in time_strings_sp:  #If there is an empty string in the list, we will ignore it.
+    time_strings_sp.remove('')
+
 
 from datetime import timedelta
 # Function to convert time strings to timedelta
@@ -67,10 +82,12 @@ def parse_time_string(time_str):
         raise ValueError(f"Invalid time format: {time_str}")
 
 # Calculate the total time
-total_time = sum((parse_time_string(t) for t in time_strings), timedelta())
+total_time = sum((parse_time_string(t) for t in time_strings_sp), timedelta())
 
 # Print the total time in HH:MM:SS format
 total_hours, remainder = divmod(total_time.total_seconds(), 3600)
 total_minutes, total_seconds = divmod(remainder, 60)
 print(f"Total Time: {int(total_hours):02}:{int(total_minutes):02}:{int(total_seconds):02}")
+
+
 
